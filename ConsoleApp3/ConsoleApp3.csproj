@@ -15,7 +15,7 @@
       <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.0-preview.5.25277.114" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0-preview.5.25277.114" />
       <PackageReference Include="MySql.Data" Version="9.3.0" />
-        <None Update="appsettings.json">
+        <None Update="config.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>

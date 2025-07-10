@@ -64,7 +64,7 @@ internal class Program
     public static void Main(string[] args)
     {
         Parser parser = new();
-        var config = parser.ParseJs("appsettings.json");
+        var config = parser.ParseJs("config.json");
 
         if (config == null || string.IsNullOrEmpty(config.ConnectionString))
         {
@@ -72,7 +72,7 @@ internal class Program
             return;
         }
 
-        string connectionString = "***Вставити свій рядок підключення***";
+        string connectionString = config.ConnectionString;
         using var connection = new SqlConnection(connectionString);
         connection.Open();
 
@@ -90,11 +90,12 @@ END";
         command.ExecuteNonQuery();
 
         var clearCmd = connection.CreateCommand();
-        clearCmd.CommandText = "DELETE FROM Users;";
+        clearCmd.CommandText = @"
+        DELETE FROM Users;
+        DBCC CHECKIDENT ('Users', RESEED, 0);
+        ";
         clearCmd.ExecuteNonQuery();
-        
-        parser.AddToBase(connection, config);
-        parser.ReadBase(connection);
+
 
         parser.AddToBase(connection, config);
         parser.ReadBase(connection);
