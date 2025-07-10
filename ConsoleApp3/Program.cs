@@ -48,7 +48,7 @@ END
         while (reader.Read())
         {
             int id = reader.GetInt32(0);
-            string name = reader.GetString(1);
+            string name = reader.IsDBNull(1) ? "<null>" : reader.GetString(1);
             bool param2 = reader.GetBoolean(2);
 
             Console.WriteLine($"Id: {id}");
