@@ -1,5 +1,5 @@
 {
-  "ConnectionString": "Server=localhost\\MSSQLSERVER01;Database=TestDB;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=True;",
+  "ConnectionString": "***",
   "param1": "Alice",
   "param2": true
 }
