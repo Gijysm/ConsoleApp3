@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Data.Sqlite;
+
+using Microsoft.Data.SqlClient;
 
 public class AppConfig
 {
@@ -23,20 +24,23 @@ public class Parser
         return JsonSerializer.Deserialize<AppConfig>(jsonText);
     }
 
-    public void AddToBase(SqliteConnection connection, AppConfig config)
+    public void AddToBase(SqlConnection connection, AppConfig config)
     {
         var insertCommand = connection.CreateCommand();
         insertCommand.CommandText =
             @"
-INSERT OR IGNORE INTO Users (Name, param2)
-VALUES ($name, $param2);
+IF NOT EXISTS (SELECT 1 FROM Users WHERE Name = @name)
+BEGIN
+    INSERT INTO Users (Name, param2)
+    VALUES (@name, @param2)
+END
 ";
-        insertCommand.Parameters.AddWithValue("$name", config.Param1 ?? "NoName");
-        insertCommand.Parameters.AddWithValue("$param2", config.Param2 ? 1 : 0);
+        insertCommand.Parameters.AddWithValue("@name", config.Param1 ?? "NoName");
+        insertCommand.Parameters.AddWithValue("@param2", config.Param2);
         insertCommand.ExecuteNonQuery();
     }
 
-    public void ReadBase(SqliteConnection connection)
+    public void ReadBase(SqlConnection connection)
     {
         var selectCommand = connection.CreateCommand();
         selectCommand.CommandText = "SELECT * FROM Users ORDER BY Id;";
@@ -68,27 +72,29 @@ internal class Program
             return;
         }
 
-        SQLitePCL.Batteries.Init();
-        using var connection = new SqliteConnection(config.ConnectionString);
+        string connectionString = "***Вставити свій рядок підключення***";
+        using var connection = new SqlConnection(connectionString);
         connection.Open();
 
         var command = connection.CreateCommand();
         command.CommandText =
             @"
-CREATE TABLE IF NOT EXISTS Users (
-    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-    Name TEXT NOT NULL UNIQUE,
-    param2 BOOLEAN NOT NULL
-);";
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
+BEGIN
+    CREATE TABLE Users (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Name NVARCHAR(100) NOT NULL UNIQUE,
+        param2 BIT NOT NULL
+    )
+END";
         command.ExecuteNonQuery();
 
         var clearCmd = connection.CreateCommand();
         clearCmd.CommandText = "DELETE FROM Users;";
         clearCmd.ExecuteNonQuery();
-
-        var resetSeqCmd = connection.CreateCommand();
-        resetSeqCmd.CommandText = "DELETE FROM sqlite_sequence WHERE name='Users';";
-        resetSeqCmd.ExecuteNonQuery();
+        
+        parser.AddToBase(connection, config);
+        parser.ReadBase(connection);
 
         parser.AddToBase(connection, config);
         parser.ReadBase(connection);
